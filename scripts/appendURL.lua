@@ -1,4 +1,14 @@
--- appendurl - Tsubajashi
+-- Author: donmaiq
+-- Appends url from clipboard to the playlist
+-- Requires xclip(linux), powershell(windows), pbpaste(macOS)
+
+-- detect_platform() and get_clipboard() copied and edited from:
+-- https://github.com/rossy/mpv-repl
+-- © 2016, James Ross-Gowan
+--
+-- Permission to use, copy, modify, and/or distribute this software for any
+-- purpose with or without fee is hereby granted, provided that the above
+-- copyright notice and this permission notice appear in all copies.
 
 local platform = nil --set to 'linux', 'windows' or 'macos' to override automatic assign
 
@@ -47,7 +57,15 @@ end
 
 function get_clipboard(primary)
 	if platform == "linux" then
-		local args = { "xclip", "-selection", primary and "primary" or "clipboard", "-out" }
+		local wayland_str = "WAYLAND_DISPLAY"
+		local args = nil
+		for _, v in ipairs(utils.get_env_list()) do
+			if v.sub(1, #wayland_str) == wayland_str then
+				args = primary and { "wl-paste", "--primary" } or { "wl-paste" }
+				break
+			end
+		end
+		args = args or { "xclip", "-selection", primary and "primary" or "clipboard", "-out" }
 		return handleres(utils.subprocess({ args = args }), args, primary)
 	elseif platform == "windows" then
 		local args = {
@@ -82,4 +100,3 @@ function get_clipboard(primary)
 end
 
 mp.add_key_binding("ctrl+v", "appendURL", append)
-
